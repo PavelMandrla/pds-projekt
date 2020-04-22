@@ -117,7 +117,19 @@ __global__ void calculateHistograms(unsigned char* lbpImg, int* histogram, int s
 
 
 
-void convertImageToLBP(unsigned char* imputImg, int width, int height) {
+
+__global__ void calcuateDistances(int* histograms, int*dataset, double* distances, int datasetSize, int histOrder) {
+    double distance = 0;
+
+    for (int i = 0; i < 9*256; i++) {
+        distance += pow((double)(histograms[0] - dataset[0]), 2);
+    }
+    distances[0/*TODO*/] = sqrt(distance);
+
+}
+
+
+void convertImageToLBP(unsigned char* imputImg, int width, int height, int* dataset) {
     unsigned char* Dev_InImg = nullptr;
     unsigned char* Dev_OutImg = nullptr;
 
@@ -133,24 +145,42 @@ void convertImageToLBP(unsigned char* imputImg, int width, int height) {
 
     cudaFree(Dev_InImg);
 
-    int histSize = 9*256;
-    int histCount = 1000;
-    //int histograms[histCount][histSize];
-    int* histograms = new int[histCount*histSize];
+    int* Dev_dataset = nullptr;
+    cudaMalloc((void**)&Dev_dataset,  5000*256*9 * sizeof(int));
+    cudaMemcpy(Dev_dataset, dataset, 5000*256*9 * sizeof(int), cudaMemcpyHostToDevice);
+
+    int histogramSize = 9 * 256;        //VELIKOST HISTOGRAMU
+    int histogramCount = (width - (histogramSize - 1)) * (height - (histogramSize - 1));  //POCET HISTOGRAMU V OBRAZKU
+    int* histograms = new int[histogramCount * histogramSize];   //PAMET PRO HISTOGRAMY V POCITACI
+    int histGrid = 1000000;            // POCET HISTOGRAMU, KTERE SE BUDOU ZAROVEN POCITAT NA GPU
 
     int* Dev_histograms = nullptr;
-    cudaMalloc((void**)&Dev_histograms,  histSize * histCount * sizeof(int));
+    cudaMalloc((void**)&Dev_histograms, histogramSize * histGrid * sizeof(int));
 
-    dim3 gridHist(histCount, 1);
-    dim3 blockHist(9, 1,1);
-    calculateHistograms<<<gridHist, blockHist>>>(Dev_OutImg, Dev_histograms, 0, 0, width, height);
+    dim3 gridHist(histGrid, 1);
+    dim3 blockHist(9, 1,1); //HISTOGRAM JE SLOZENY Z 9 SUBHISTOGRAMU
 
-    cudaMemcpy(histograms, Dev_histograms,  histSize * histCount * sizeof(int), cudaMemcpyDeviceToHost);
+    int i = 0;
+    int* writeFront = histograms;
+    while (histGrid * (i + 1) <= histogramCount) {
+        //startX = (histGrid * i) % width;
+        //startY = (histGrid * i) / width;
+        calculateHistograms<<<gridHist, blockHist>>>(Dev_OutImg, Dev_histograms, (histGrid * i) % width, (histGrid * i) / width, width, height);
+
+        cudaMemcpy(writeFront, Dev_histograms, histogramSize * histogramCount * sizeof(int), cudaMemcpyDeviceToHost);
+        writeFront += histGrid * histogramSize;
+        i++;
+    }
+    int restHistGrid = histogramCount - histGrid * i;   //ZBYTEK NEDOPOCITANYCH
+    if (restHistGrid > 0) {
+        dim3 restGridHist(restHistGrid, 1);
+        calculateHistograms<<<gridHist, blockHist>>>(Dev_OutImg, Dev_histograms, (histGrid * i) % width, (histGrid * i) / width, width, height);
+        cudaMemcpy(writeFront, Dev_histograms, histogramSize * histGrid * sizeof(int), cudaMemcpyDeviceToHost);
+    }
 
     cudaFree(Dev_histograms);
     cudaFree(Dev_OutImg);
-
-
+    cudaFree(Dev_dataset);
 
     delete [] histograms;
 }

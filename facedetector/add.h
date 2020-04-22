@@ -9,6 +9,6 @@
 #include <math.h>
 
 
-void convertImageToLBP(unsigned char* Input_Image, int Height, int Width);
+void convertImageToLBP(unsigned char* Input_Image, int Height, int Width, int* dataset);
 
 #endif //CUDA_ADD_ADD_H
