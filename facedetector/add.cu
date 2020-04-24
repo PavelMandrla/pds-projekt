@@ -3,6 +3,7 @@
 #include "device_launch_parameters.h"
 
 #define RECT_SIZE 32
+#define HIST_SIZE 9*256
 
 __device__ bool isPixelLighterThanCentre(int y, int x, unsigned char centerVal, unsigned char* inImg, int width, int height) {
     if (x < 0 || y < 0 || x > width - 1 || y > height - 1) {
@@ -119,13 +120,48 @@ __global__ void calculateHistograms(unsigned char* lbpImg, int* histogram, int s
 
 
 __global__ void calcuateDistances(int* histograms, int*dataset, double* distances, int datasetSize, int histOrder) {
-    double distance = 0;
+    long threadPos = blockIdx.x * blockDim.x + threadIdx.x;
+    int histogramPos = threadPos / datasetSize;
+    int datasetPos = threadPos % datasetSize;
+    //double distance = 0;
+    distances[threadPos] = 0;
 
     for (int i = 0; i < 9*256; i++) {
-        distance += pow((double)(histograms[0] - dataset[0]), 2);
+        distances[threadPos] += pow((double)(histograms[i + histogramPos*HIST_SIZE]) - dataset[i + datasetPos*HIST_SIZE], 2);
     }
-    distances[0/*TODO*/] = sqrt(distance);
+    distances[threadPos] = sqrt(distances[threadPos]);
+}
 
+__global__ void getKNNDistance(int neighbourCount, double*histogramDistances, double*knnDistances, int datasetSize) {
+    long threadPos = blockIdx.x * blockDim.x + threadIdx.x;
+    double* nearestNeighbours = new double[neighbourCount];
+    for (int i = 0; i < neighbourCount; i++){
+        nearestNeighbours[i] = -1;
+    }
+    for (int i = 0; i < datasetSize; i++) {
+        for (int j = 0; j < neighbourCount - 1; j++){
+            if (j == 0) {
+                if (nearestNeighbours[j] == -1 || nearestNeighbours[j] > histogramDistances[i]) {
+                    nearestNeighbours[j] = histogramDistances[i];
+                } else {
+                    break;
+                }
+            } else {
+                if (nearestNeighbours[j + 1] == -1 || nearestNeighbours[j + 1] > nearestNeighbours[j]) {
+                    //switch values
+                    double tmp = nearestNeighbours[j + 1];
+                    nearestNeighbours[j + 1] = nearestNeighbours[j];
+                    nearestNeighbours[j] = tmp;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    knnDistances[threadPos] = 0;
+    for (int i = 0; i < neighbourCount; i++){
+        knnDistances[threadPos] += nearestNeighbours[i];
+    }
 }
 
 
@@ -145,10 +181,6 @@ void convertImageToLBP(unsigned char* imputImg, int width, int height, int* data
 
     cudaFree(Dev_InImg);
 
-    int* Dev_dataset = nullptr;
-    cudaMalloc((void**)&Dev_dataset,  5000*256*9 * sizeof(int));
-    cudaMemcpy(Dev_dataset, dataset, 5000*256*9 * sizeof(int), cudaMemcpyHostToDevice);
-
     int histogramSize = 9 * 256;        //VELIKOST HISTOGRAMU
     int histogramCount = (width - (histogramSize - 1)) * (height - (histogramSize - 1));  //POCET HISTOGRAMU V OBRAZKU
     int* histograms = new int[histogramCount * histogramSize];   //PAMET PRO HISTOGRAMY V POCITACI
@@ -160,6 +192,7 @@ void convertImageToLBP(unsigned char* imputImg, int width, int height, int* data
     dim3 gridHist(histGrid, 1);
     dim3 blockHist(9, 1,1); //HISTOGRAM JE SLOZENY Z 9 SUBHISTOGRAMU
 
+    //VYPOCITEJ HISTOGRAMY A ULOZ JE V PAMETI
     int i = 0;
     int* writeFront = histograms;
     while (histGrid * (i + 1) <= histogramCount) {
@@ -180,7 +213,15 @@ void convertImageToLBP(unsigned char* imputImg, int width, int height, int* data
 
     cudaFree(Dev_histograms);
     cudaFree(Dev_OutImg);
-    cudaFree(Dev_dataset);
 
+    //NAHRAJ DATASET DO GPU
+    int* Dev_dataset = nullptr;
+    cudaMalloc((void**)&Dev_dataset,  5000*256*9 * sizeof(int));
+    cudaMemcpy(Dev_dataset, dataset, 5000*256*9 * sizeof(int), cudaMemcpyHostToDevice);
+
+
+
+
+    cudaFree(Dev_dataset);
     delete [] histograms;
 }
