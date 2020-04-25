@@ -1,5 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include "add.h"
+#include "HistogramExtractor.h"
+#include "ProcessedImage.h"
 
 
 
@@ -34,9 +36,23 @@ int main() {
 
     cout << "Height: " << bwImg.rows << ", Width: " << bwImg.cols << ", Channels: " << bwImg.channels() << endl;
 
-    convertImageToLBP(bwImg.data, bwImg.cols, bwImg.rows, faces);
+    auto extractor = new HistogramExtractor();
+    auto a = extractor->ProcessImage(bwImg);
 
-    imwrite("../output.png", bwImg);
+    ofstream outfile("out.txt");
+
+    for (int i = 0; i < a->histogramCount*9*255; i += 32) {
+        outfile << a->histograms[i] << ",";
+
+
+    }
+    outfile << endl;
+
+    outfile.close();
+
+    //convertImageToLBP(bwImg.data, bwImg.cols, bwImg.rows, faces);
+
+    //imwrite("../output.png", bwImg);
 
     delete [] faces;
 
