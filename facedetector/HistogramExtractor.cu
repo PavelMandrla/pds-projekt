@@ -129,7 +129,7 @@ void HistogramExtractor::extractHistograms(int* histograms, int histogramCount, 
 
     cudaFree(Dev_InImg);
 
-    int biteSize = 1000;         //NUMBER OF HISTOGRAMS THAT WILL BE CALCULATED AT ONCE
+    int biteSize = 50000;         //NUMBER OF HISTOGRAMS THAT WILL BE CALCULATED AT ONCE
 
     int *Dev_histograms = nullptr;
     cudaMalloc((void **) &Dev_histograms, HIST_SIZE * biteSize * sizeof(int));
@@ -151,7 +151,6 @@ void HistogramExtractor::extractHistograms(int* histograms, int histogramCount, 
         calculateHistograms<<<grid_histogramsRest, block_histograms>>>(Dev_OutImg, Dev_histograms, (biteSize * i) % width, (biteSize * i) / width, width, height);
         cudaMemcpy(writeFront, Dev_histograms, HIST_SIZE * restSize * sizeof(int), cudaMemcpyDeviceToHost);
     }
-
     cudaFree(Dev_histograms);
     cudaFree(Dev_OutImg);
 }

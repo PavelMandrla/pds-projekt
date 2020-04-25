@@ -16,7 +16,7 @@ add_library(add STATIC
         ProcessedImage.cpp
         ProcessedImage.h
         definitions.h
-        HistogramExtractor.cu)
+        HistogramExtractor.cu KNNClassifier.cpp KNNClassifier.h KNNClassifier.cu)
 set_target_properties( add PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 add_executable(cuda_add main.cpp)

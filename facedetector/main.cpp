@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include "add.h"
 #include "HistogramExtractor.h"
+#include "KNNClassifier.h"
 #include "ProcessedImage.h"
 
 
@@ -37,14 +38,8 @@ int main() {
     cout << "Height: " << bwImg.rows << ", Width: " << bwImg.cols << ", Channels: " << bwImg.channels() << endl;
 
     auto extractor = new HistogramExtractor();
-    auto a = extractor->ProcessImage(bwImg);
-
-    ofstream outfile("out.txt");
-    for (int i = 0; i < a->histogramCount*9*255; i += 32) {
-        outfile << a->histograms[i] << ",";
-    }
-    outfile << endl;
-    outfile.close();
+    KNNClassifier classifier(2, 15, faces);
+    classifier.getFaces(extractor->ProcessImage(bwImg));
 
     //convertImageToLBP(bwImg.data, bwImg.cols, bwImg.rows, faces);
 
