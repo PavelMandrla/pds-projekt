@@ -40,14 +40,10 @@ int main() {
     auto a = extractor->ProcessImage(bwImg);
 
     ofstream outfile("out.txt");
-
     for (int i = 0; i < a->histogramCount*9*255; i += 32) {
         outfile << a->histograms[i] << ",";
-
-
     }
     outfile << endl;
-
     outfile.close();
 
     //convertImageToLBP(bwImg.data, bwImg.cols, bwImg.rows, faces);

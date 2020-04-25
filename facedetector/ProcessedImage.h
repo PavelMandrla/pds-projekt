@@ -7,7 +7,9 @@
 
 
 class ProcessedImage {
-
+public:
+    int histogramCount;
+    int* histograms;
 };
 
 
