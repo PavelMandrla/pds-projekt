@@ -10,7 +10,7 @@
 
 class HistogramExtractor {
 private:
-    void extractHistograms(int* histograms, int histogramCount, unsigned char* imputImg, int width, int height);
+    void extractHistograms(short* histograms, int histogramCount, unsigned char* imputImg, int width, int height);
 public:
     std::shared_ptr<ProcessedImage> ProcessImage(cv::Mat image);
 

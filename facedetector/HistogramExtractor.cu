@@ -40,7 +40,7 @@ __global__ void CUDA_calculateLBP(unsigned char* inImg, unsigned char* outImg, i
 }
 
 
-__device__ bool getRectCoords(int &xFrom, int&yFrom, int startX, int startY, int width, int height) {
+__device__ bool getRectCoords(int &xFrom, int &yFrom, int startX, int startY, int width, int height) {
     int areaX, areaY;
     areaX = startX + blockIdx.x;
     areaY = startY;
@@ -98,7 +98,7 @@ __device__ bool getRectCoords(int &xFrom, int&yFrom, int startX, int startY, int
     return true;
 }
 
-__global__ void calculateHistograms(unsigned char* lbpImg, int* histogram, int startX, int startY, int width, int height) {
+__global__ void calculateHistograms(unsigned char* lbpImg, short* histogram, int startX, int startY, int width, int height) {
     int histStart = HIST_SIZE * blockIdx.x + 256 * threadIdx.x;
     int xFrom, yFrom;
     getRectCoords(xFrom, yFrom, startX, startY, width, height);
@@ -109,14 +109,16 @@ __global__ void calculateHistograms(unsigned char* lbpImg, int* histogram, int s
 
     for (int x = 0; x < GRID_SIZE; x++) {
         for (int y = 0; y < GRID_SIZE; y++) {
-            int value = lbpImg[x+y*width];
+            int nX = x + xFrom;
+            int nY = y + yFrom;
+            int value = lbpImg[nX+nY*width];    //TODO -> ???
             histogram[value + histStart]++;
         }
     }
 }
 
 
-void HistogramExtractor::extractHistograms(int* histograms, int histogramCount, unsigned char* imputImg, int width, int height) {
+void HistogramExtractor::extractHistograms(short* histograms, int histogramCount, unsigned char* imputImg, int width, int height) {
     unsigned char *Dev_InImg = nullptr;
     cudaMalloc((void **) &Dev_InImg, height * width);
     cudaMemcpy(Dev_InImg, imputImg, width * height, cudaMemcpyHostToDevice);    //COPY IMAGE TO DEVICE
@@ -131,25 +133,25 @@ void HistogramExtractor::extractHistograms(int* histograms, int histogramCount, 
 
     int biteSize = 50000;         //NUMBER OF HISTOGRAMS THAT WILL BE CALCULATED AT ONCE
 
-    int *Dev_histograms = nullptr;
-    cudaMalloc((void **) &Dev_histograms, HIST_SIZE * biteSize * sizeof(int));
+    short* Dev_histograms = nullptr;
+    cudaMalloc((void **) &Dev_histograms, HIST_SIZE * biteSize * sizeof(short));
 
     dim3 grid_histograms(biteSize, 1);
     dim3 block_histograms(9,1,1);
 
     int i = 0;
-    int* writeFront = histograms;
+    short* writeFront = histograms;
     while ((i+1)*biteSize <= histogramCount) {
         calculateHistograms<<<grid_histograms, block_histograms>>>(Dev_OutImg, Dev_histograms, (biteSize * i) % width, (biteSize * i) / width, width, height);
-        cudaMemcpy(writeFront, Dev_histograms, HIST_SIZE * biteSize * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(writeFront, Dev_histograms, HIST_SIZE * biteSize * sizeof(short), cudaMemcpyDeviceToHost);
         writeFront += HIST_SIZE * biteSize;
         i++;
     }
-    int restSize = histogramCount - biteSize * i;           //TODO -> asi nefunguje
+    int restSize = histogramCount - biteSize * i;
     if (restSize > 0) {
         dim3 grid_histogramsRest(restSize, 1);
         calculateHistograms<<<grid_histogramsRest, block_histograms>>>(Dev_OutImg, Dev_histograms, (biteSize * i) % width, (biteSize * i) / width, width, height);
-        cudaMemcpy(writeFront, Dev_histograms, HIST_SIZE * restSize * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(writeFront, Dev_histograms, HIST_SIZE * restSize * sizeof(short), cudaMemcpyDeviceToHost);
     }
     cudaFree(Dev_histograms);
     cudaFree(Dev_OutImg);

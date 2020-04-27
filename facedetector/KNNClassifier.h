@@ -13,11 +13,11 @@ class KNNClassifier {
 private:
     int K;
     double threshold;
-    int* dataset;
+    short* dataset;
 
-    void CalculateDistances(int K, double* distances, int* dataset, int datasetSize, int* histograms, int histogramsCount);
+    void CalculateDistances(int K, float* distances, short* dataset, int datasetSize, short* histograms, int histogramsCount);
 public:
-    KNNClassifier(int K, double threshold, int* dataset);
+    KNNClassifier(int K, double threshold, short* dataset);
 
     std::list<cv::Rect> getFaces(std::shared_ptr<ProcessedImage> img);
 
