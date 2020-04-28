@@ -1,5 +1,4 @@
 #include <opencv2/opencv.hpp>
-#include "add.h"
 #include "HistogramExtractor.h"
 #include "KNNClassifier.h"
 #include "ProcessedImage.h"
