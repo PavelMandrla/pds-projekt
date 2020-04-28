@@ -19,7 +19,7 @@ private:
 public:
     KNNClassifier(int K, double threshold, short* dataset);
 
-    std::list<cv::Rect> getFaces(std::shared_ptr<ProcessedImage> img);
+    std::list<int> getFaces(std::shared_ptr<ProcessedImage> img);
 
 };
 

@@ -19,9 +19,9 @@ add_library(add STATIC
         HistogramExtractor.cu KNNClassifier.cpp KNNClassifier.h KNNClassifier.cu)
 set_target_properties( add PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-add_executable(cuda_add main.cpp)
+add_executable(facedetector main.cpp)
 
-target_link_libraries(cuda_add
+target_link_libraries(facedetector
         ${OpenCV_LIBS}
         add
         )

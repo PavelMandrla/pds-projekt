@@ -8,6 +8,8 @@
 
 class ProcessedImage {
 public:
+    int width;
+    int height;
     int histogramCount;
     short* histograms;
 };

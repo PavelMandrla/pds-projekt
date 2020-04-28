@@ -10,17 +10,17 @@ KNNClassifier::KNNClassifier(int K, double threshold, short* dataset) {
     this->dataset = dataset;
 }
 
-std::list<cv::Rect> KNNClassifier::getFaces(std::shared_ptr<ProcessedImage> img) {
-    std::list<cv::Rect> result;
+std::list<int> KNNClassifier::getFaces(std::shared_ptr<ProcessedImage> img) {
+    std::list<int> result;
     float* distances = new float[img->histogramCount];
 
     this->CalculateDistances(this->K, distances, this->dataset, 100, img->histograms, img->histogramCount);
 
-    for (int i = 0; i < 1000; i++) {
-        std::cout << distances[i] << ",";
+    for (int i = 0; i < img->histogramCount; i++) {
+        if (distances[i] <= this->threshold) {
+            result.push_back(i);
+        }
     }
-    std::cout << std::endl;
-
 
     return result;
 }

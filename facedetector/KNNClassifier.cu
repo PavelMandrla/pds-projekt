@@ -90,9 +90,9 @@ void KNNClassifier::CalculateDistances(int K, float* knnDistances, short* datase
         dim3 grid_distanceCalculation(gridSize);
         CUDA_calcuateDistances<<<grid_distanceCalculation, 1024>>>(Dev_histograms, Dev_dataset, Dev_distances, datasetSize, biteSize);
 
-        float* distances = new float[biteSize * datasetSize * HIST_SIZE];
+        //float* distances = new float[biteSize * datasetSize * HIST_SIZE];
 
-        err = cudaMemcpy(distances, Dev_distances, biteSize * datasetSize * sizeof(float), cudaMemcpyDeviceToHost);
+        //err = cudaMemcpy(distances, Dev_distances, biteSize * datasetSize * sizeof(float), cudaMemcpyDeviceToHost);
 
         dim3 grid_knnDistanceCalc(biteSize);
         CUDA_getKNNDistances<<<grid_knnDistanceCalc, 1>>>(K, Dev_distances, Dev_knnDistances, datasetSize, biteSize);
@@ -103,7 +103,7 @@ void KNNClassifier::CalculateDistances(int K, float* knnDistances, short* datase
         readFront += biteSize;
         i++;
     }
-    /*
+
     int restSize = histogramsCount - biteSize * i;
 
     if (restSize > 0) {
@@ -118,7 +118,7 @@ void KNNClassifier::CalculateDistances(int K, float* knnDistances, short* datase
 
         cudaMemcpy(readFront, Dev_knnDistances, restSize * sizeof(float), cudaMemcpyDeviceToHost);
     }
-     */
+
 
 
     cudaFree(Dev_dataset);

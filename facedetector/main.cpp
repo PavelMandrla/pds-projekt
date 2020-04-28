@@ -25,27 +25,36 @@ void loadDataset(short* setArr, string filename) {
     inFile.close();
 }
 
-int main() {
-    Mat Input_Image = imread("../swayze.png");
+int main(int argc, char** argv) {
+
+    Mat Input_Image = imread(argv[1]);
     cv::Mat bwImg;
 
-    short* faces = new short[5000*256*9];
-    loadDataset(faces, "../dataset.csv");
+    int K = atoi(argv[2]);
+    int threshold = atoi(argv[3]);
+
+    short* dataset = new short[5000 * HIST_SIZE];
+    loadDataset(dataset, "../dataset.csv");
     cv::cvtColor(Input_Image, bwImg, cv::COLOR_BGR2GRAY);
 
-    cout << "Height: " << bwImg.rows << ", Width: " << bwImg.cols << ", Channels: " << bwImg.channels() << endl;
 
     auto extractor = new HistogramExtractor();
-    KNNClassifier classifier(3, 15, faces);
+    KNNClassifier classifier(K, threshold, dataset);
     auto processed = extractor->ProcessImage(bwImg);
-    /*
-    for (int i = 0; i < HIST_SIZE; i++) {
-        cout << processed->histograms[i] << " - " << processed->histograms[i + HIST_SIZE] << " - " << processed->histograms[i + 2*HIST_SIZE] << " - " << processed->histograms[i + 3*HIST_SIZE] << " - " << processed->histograms[i + 4*HIST_SIZE] << endl;
-    }
-    */
-    classifier.getFaces(processed);
+    auto faces = classifier.getFaces(processed);
+    while (!faces.empty()) {
+        int i = faces.front();
+        faces.pop_front();
 
-    delete [] faces;
+        int x = i % (bwImg.cols - 95);
+        int y = i / (bwImg.cols - 95);
+        cv::Rect rect(x, y, 96,96);
+        rectangle(Input_Image, rect, Scalar(255,0,0), 1);
+    }
+
+    imwrite("myImageWithRect.png",Input_Image);
+
+    delete [] dataset;
 
     return 0;
 }

@@ -142,7 +142,7 @@ void HistogramExtractor::extractHistograms(short* histograms, int histogramCount
     int i = 0;
     short* writeFront = histograms;
     while ((i+1)*biteSize <= histogramCount) {
-        calculateHistograms<<<grid_histograms, block_histograms>>>(Dev_OutImg, Dev_histograms, (biteSize * i) % width, (biteSize * i) / width, width, height);
+        calculateHistograms<<<grid_histograms, block_histograms>>>(Dev_OutImg, Dev_histograms, (biteSize * i) % (width-95), (biteSize * i) / (width-95), width, height);
         cudaMemcpy(writeFront, Dev_histograms, HIST_SIZE * biteSize * sizeof(short), cudaMemcpyDeviceToHost);
         writeFront += HIST_SIZE * biteSize;
         i++;
@@ -150,7 +150,7 @@ void HistogramExtractor::extractHistograms(short* histograms, int histogramCount
     int restSize = histogramCount - biteSize * i;
     if (restSize > 0) {
         dim3 grid_histogramsRest(restSize, 1);
-        calculateHistograms<<<grid_histogramsRest, block_histograms>>>(Dev_OutImg, Dev_histograms, (biteSize * i) % width, (biteSize * i) / width, width, height);
+        calculateHistograms<<<grid_histogramsRest, block_histograms>>>(Dev_OutImg, Dev_histograms, (biteSize * i) % (width-95), (biteSize * i) / (width - 95), width, height);
         cudaMemcpy(writeFront, Dev_histograms, HIST_SIZE * restSize * sizeof(short), cudaMemcpyDeviceToHost);
     }
     cudaFree(Dev_histograms);
