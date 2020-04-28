@@ -7,7 +7,9 @@
 #include <iomanip>
 #include <opencv2/opencv.hpp>
 
-#include "add.h"
+#include "HistogramExtractor.h"
+#include "ProcessedImage.h"
+//#include "add.h"
 
 using namespace cv;
 using namespace std;
@@ -27,19 +29,36 @@ int main(int argc, const char**argv) {
 
         Mat Input_Image = imread(ss.str());
         Mat bwImg;
+        Mat resized;
         cvtColor(Input_Image, bwImg, cv::COLOR_BGR2GRAY);
-        resize(bwImg, bwImg, bwImg.size(), 96, 96, INTER_CUBIC);
+        resize(bwImg, resized, Size(96,96));
 
-        int* histogram = new int[9*256];
-        convertImageToLBP(bwImg.data, bwImg.cols, bwImg.rows, histogram);
+        HistogramExtractor extractor;
+        auto processed = extractor.ProcessImage(resized);
+
+
+        //int* histogram = new int[9*256];
+        //convertImageToLBP(bwImg.data, bwImg.cols, bwImg.rows, histogram);
 
         for (int j = 0; j < (9*256) - 1; j++) {
-            myfile << histogram[j] << ",";
+            //myfile << histogram[j] << ",";
+            myfile << processed->histograms[j] << ",";
         }
-        myfile << histogram[(9*256) - 1] << endl;
+        //myfile << histogram[(9*256) - 1] << endl;
+        myfile << processed->histograms[(9*256) - 1] << endl;
 
     }
     myfile.close();
+
+/*
+    Mat Input_Image = imread("../faces/00037.png");
+    Mat bwImg;
+    Mat resized;
+    cvtColor(Input_Image, bwImg, cv::COLOR_BGR2GRAY);
+    resize(bwImg, resized, Size (96,96));
+
+    imwrite("out.png", resized);
+*/
 
     return 0;
 }

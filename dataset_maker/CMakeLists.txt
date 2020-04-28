@@ -7,8 +7,13 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_library(add STATIC
-        add.h
-        add.cu
+        #add.h
+        #add.cu
+        HistogramExtractor.h
+        HistogramExtractor.cpp
+        HistogramExtractor.cu
+        ProcessedImage.h
+        definitions.h
         )
 set_target_properties( add PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
