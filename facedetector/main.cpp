@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
         rectangle(Input_Image, rect, Scalar(255,0,0), 1);
     }
 
-    imwrite("myImageWithRect.png",Input_Image);
+    imwrite("detectedFaces.png",Input_Image);
 
     delete [] dataset;
 
